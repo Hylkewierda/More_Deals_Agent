@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="nl">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MoreDeals Agent</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet" />
+  <style>
+    /* 
+      CINEMATIC / INSTRUMENT DESIGN SYSTEM
+      Eradicating generic AI patterns in favor of measured architectural precision.
+    */
+    :root {
+      --bg: #09090b;
+      --surface: #121214;
+      --border: #27272a;
+      --border-focus: #52525b;
+      --text: #fafafa;
+      --text-muted: #a1a1aa;
+      --accent: #E86A33;
+      /* Stark brand accent */
+      --font-ui: 'Inter', -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+
+      /* Easing: Spring-like, decisive */
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+      --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    ::selection {
+      background: rgba(232, 106, 51, 0.3);
+      color: var(--text);
+    }
+
+    body {
+      font-family: var(--font-ui);
+      background-color: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* Noise Texture Overlay for depth without gradients */
+    body::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opactiy='0.04'/%3E%3C/svg%3E");
+      opacity: 0.03;
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    #bg-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* Top Navigation Area - Architectural Grid */
+    header {
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+      flex-shrink: 0;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text);
+    }
+
+    .brand-accent {
+      width: 6px;
+      height: 6px;
+      background: var(--accent);
+      border-radius: 50%;
+    }
+
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+    }
+
+    .status-dot {
+      width: 4px;
+      height: 4px;
+      background: #10b981;
+      border-radius: 50%;
+      box-shadow: 0 0 6px rgba(16, 185, 129, 0.4);
+    }
+
+    /* Main Content Area */
+    .viewport {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    /* Scrollable Chat Region */
+    .log-stream {
+      flex: 1;
+      width: 100%;
+      max-width: 860px;
+      overflow-y: auto;
+      padding: 48px 24px 160px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 40px;
+      scroll-behavior: smooth;
+    }
+
+    .log-stream::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .log-stream::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .log-stream::-webkit-scrollbar-thumb {
+      background: var(--border);
+    }
+
+    /* Empty State / Welcome */
+    .empty-state {
+      margin-top: 10vh;
+      animation: reveal 0.8s var(--ease-out) forwards;
+    }
+
+    .empty-header {
+      font-size: 24px;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      margin-bottom: 12px;
+      color: var(--text);
+    }
+
+    .empty-sub {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.6;
+      max-width: 480px;
+    }
+
+    /* Message Typography & Layout (Not Bubbles, but Document Blocks) */
+    .entry {
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      gap: 16px;
+      width: 100%;
+      opacity: 0;
+      transform: translateY(8px);
+      animation: reveal 0.5s var(--ease-out) forwards;
+    }
+
+    @keyframes reveal {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .entry-badge {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      padding-top: 5px;
+      text-align: right;
+    }
+
+    .entry.user .entry-badge {
+      color: var(--text);
+    }
+
+    .entry.assistant .entry-badge {
+      color: var(--accent);
+    }
+
+    .entry-content {
+      font-size: 15px;
+      line-height: 1.7;
+      color: var(--text);
+    }
+
+    .entry.user .entry-content {
+      color: var(--text-muted);
+    }
+
+    /* Status Steps */
+    .status-step {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 0;
+      transition: opacity 0.3s var(--ease-out);
+    }
+
+    .status-step .spinner {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border: 1.5px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .status-step.done {
+      opacity: 0.4;
+    }
+
+    .status-step.done .spinner {
+      animation: none;
+      border-color: var(--accent);
+      background: var(--accent);
+    }
+
+    /* Markdown Elements */
+    .entry-content strong {
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .entry-content p {
+      margin-bottom: 16px;
+    }
+
+    .entry-content p:last-child {
+      margin-bottom: 0;
+    }
+
+    .entry-content ul {
+      padding-left: 20px;
+      margin-bottom: 16px;
+    }
+
+    .entry-content li {
+      margin-bottom: 8px;
+    }
+
+    .entry-content pre {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 16px 20px;
+      border-radius: 4px;
+      /* Sharp, intentional border radius */
+      overflow-x: auto;
+      margin: 16px 0;
+    }
+
+    .entry-content code {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: #e2e8f0;
+    }
+
+    .entry-content p code {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+
+    /* Bottom Instrument Deck (Input Area) */
+    .instrument-deck {
+      flex-shrink: 0;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      padding: 16px 24px 32px 24px;
+      background: var(--bg);
+    }
+
+    .command-line {
+      width: 100%;
+      max-width: 860px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      transition: border-color 0.2s var(--ease-out);
+      box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.5);
+    }
+
+    .command-line:focus-within {
+      border-color: var(--border-focus);
+    }
+
+    .cmd-textarea {
+      width: 100%;
+      background: transparent;
+      border: none;
+      color: var(--text);
+      font-family: var(--font-ui);
+      font-size: 15px;
+      line-height: 1.6;
+      padding: 16px 20px;
+      resize: none;
+      outline: none;
+      min-height: 56px;
+      max-height: 30vh;
+    }
+
+    .cmd-textarea::placeholder {
+      color: #52525b;
+    }
+
+    .cmd-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      border-top: 1px solid transparent;
+      transition: border-color 0.2s;
+    }
+
+    .command-line:focus-within .cmd-toolbar {
+      border-top-color: var(--border);
+    }
+
+    .cmd-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .cmd-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      letter-spacing: 0.02em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      height: 32px;
+      padding: 0 12px;
+      cursor: pointer;
+      transition: all 0.2s var(--ease-out);
+    }
+
+    .cmd-btn:hover {
+      background: var(--surface);
+      color: var(--text);
+      border-color: var(--border);
+    }
+
+    .cmd-btn svg {
+      width: 14px;
+      height: 14px;
+      fill: currentColor;
+    }
+
+    .cmd-execute {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s var(--ease-out);
+    }
+
+    .cmd-execute:hover:not(:disabled) {
+      background: var(--text);
+      color: var(--bg);
+      border-color: var(--text);
+    }
+
+    .cmd-execute:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .cmd-execute svg {
+      width: 14px;
+      height: 14px;
+      fill: currentColor;
+    }
+
+    /* Attachment Pills UI */
+    .attachments-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 0 20px;
+      margin-top: 12px;
+    }
+
+    .attachments-container:empty {
+      margin-top: 0;
+    }
+
+    .attachment-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(232, 106, 51, 0.08);
+      border: 1px solid rgba(232, 106, 51, 0.25);
+      color: var(--accent);
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+    }
+
+    .remove-att {
+      cursor: pointer;
+      opacity: 0.6;
+      transition: opacity 0.2s;
+    }
+
+    .remove-att:hover {
+      opacity: 1;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="bg-canvas"></canvas>
+
+  <header style="position: relative; z-index: 10;">
+    <div class="brand">
+      <div class="brand-accent"></div>
+      MoreDeals Agent
+    </div>
+    <div class="status-indicator">
+      <div class="status-dot"></div>
+      SYSTEM ONLINE
+    </div>
+  </header>
+
+  <main class="viewport" style="z-index: 10;">
+    <div class="log-stream" id="log-stream">
+
+      <div class="empty-state" id="empty-state">
+        <h1 class="empty-header">Awaiting Input.</h1>
+        <p class="empty-sub">
+          Submit sales pitches for systematic review, or query the assistant for course curriculum clarification.
+          Provide high-context data for optimal analysis.
+        </p>
+      </div>
+
+    </div>
+
+    <div class="instrument-deck">
+      <div class="command-line">
+        <div id="attachments-container" class="attachments-container"></div>
+        <textarea id="input" class="cmd-textarea" placeholder="Enter query or paste sales document..." rows="1"
+          onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+
+        <div class="cmd-toolbar">
+          <div class="cmd-actions">
+            <input type="file" id="file-upload" accept=".docx,.txt,.md,.csv,.json" style="display: none;"
+              onchange="handleFileSelect(event)" />
+            <button class="cmd-btn" title="Attach Document" aria-label="Upload file"
+              onclick="document.getElementById('file-upload').click()">
+              <svg viewBox="0 0 24 24">
+                <path
+                  d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5a2.5 2.5 0 015 0v10.5c0 .55-.45 1-1 1s-1-.45-1-1V6H10v9.5a2.5 2.5 0 005 0V5c0-2.21-1.79-4-4-4S7 2.79 7 5v12.5c0 3.04 2.46 5.5 5.5 5.5s5.5-2.46 5.5-5.5V6h-1.5z" />
+              </svg>
+              <span id="attach-label">ATTACH_FILE</span>
+            </button>
+          </div>
+          <button class="cmd-execute" id="execute-btn" onclick="executeCommand()">
+            <svg viewBox="0 0 24 24">
+              <path d="M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    let logHistory = [];
+    let processing = false;
+    let attachedFiles = [];
+
+    async function handleFileSelect(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      e.target.value = ''; // reset input
+
+      const label = document.getElementById('attach-label');
+      const orgText = label.innerText;
+      label.innerText = 'UPLOADING...';
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        const res = await fetch('/api/extract', {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+
+        attachedFiles.push({ filename: data.filename, text: data.text });
+        updateAttachmentUI();
+      } catch (err) {
+        alert("Upload failed: " + err.message);
+      } finally {
+        label.innerText = orgText;
+      }
+    }
+
+    function updateAttachmentUI() {
+      const container = document.getElementById('attachments-container');
+      container.innerHTML = '';
+      attachedFiles.forEach((f, idx) => {
+        const pill = document.createElement('div');
+        pill.className = 'attachment-pill';
+        pill.innerHTML = `
+          <span>${f.filename}</span>
+          <span class="remove-att" onclick="removeAttachment(${idx})">✕</span>
+        `;
+        container.appendChild(pill);
+      });
+    }
+
+    function removeAttachment(idx) {
+      attachedFiles.splice(idx, 1);
+      updateAttachmentUI();
+    }
+
+    function autoResize(el) {
+      el.style.height = 'auto';
+      el.style.height = Math.min(el.scrollHeight, window.innerHeight * 0.3) + 'px';
+    }
+
+    function handleKey(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        executeCommand();
+      }
+    }
+
+    function parseMarkdown(text) {
+      return text
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
+        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+        .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+        .replace(/^## (.+)$/gm, '<h3>$1</h3>')
+        .replace(/^- (.+)$/gm, '<li>$1</li>')
+        .replace(/(<li>[\s\S]*?<\/li>)/g, '<ul>$1</ul>')
+        .replace(/<\/ul><ul>/g, '')
+        .replace(/\n\n/g, '</p><p>')
+        .trim();
+    }
+
+    async function executeCommand() {
+      if (processing) return;
+      const inputEl = document.getElementById('input');
+      const text = inputEl.value.trim();
+
+      if (!text && attachedFiles.length === 0) return;
+
+      const emptyState = document.getElementById('empty-state');
+      if (emptyState) emptyState.style.display = 'none';
+
+      // Build payload for backend
+      let payloadContent = "";
+      if (attachedFiles.length > 0) {
+        attachedFiles.forEach(att => {
+          payloadContent += `\n\n--- DOCUMENT_EXCERPT: ${att.filename} ---\n${att.text}\n--- END OF DOCUMENT ---\n\n`;
+        });
+        if (text) {
+          payloadContent += "\nUSER INSTRUCTION: " + text;
+        } else {
+          payloadContent += "\nUSER INSTRUCTION: Please review the attached document(s).";
+        }
+      } else {
+        payloadContent = text;
+      }
+
+      // Build visual display content for UI
+      let displayContent = text;
+      if (attachedFiles.length > 0) {
+        let attHtml = attachedFiles.map(a => `\`[ATTACHED FILE: ${a.filename}]\``).join('\n');
+        displayContent = displayContent ? `${attHtml}\n\n${displayContent}` : attHtml;
+      }
+
+      logHistory.push({ role: 'user', content: payloadContent });
+      appendLog('USR', displayContent);
+
+      inputEl.value = '';
+      inputEl.style.height = 'auto';
+      attachedFiles = [];
+      updateAttachmentUI();
+
+      processing = true;
+      document.getElementById('execute-btn').disabled = true;
+
+      try {
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messages: logHistory })
+        });
+
+        if (!response.ok) {
+          const err = await response.json();
+          throw new Error(err.detail || 'Connection disrupted.');
+        }
+
+        const { el: logContent } = appendLog('SYS', '');
+
+        let fullText = '';
+        let statusContainer = null;
+        let currentStepEl = null;
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop();
+          for (const line of lines) {
+            if (!line.startsWith('data: ')) continue;
+            const data = line.slice(6);
+            if (data === '[DONE]') break;
+            try {
+              const parsed = JSON.parse(data);
+
+              if (parsed.status) {
+                // Show status step
+                if (!statusContainer) {
+                  statusContainer = document.createElement('div');
+                  logContent.appendChild(statusContainer);
+                }
+                if (currentStepEl) currentStepEl.classList.add('done');
+                currentStepEl = document.createElement('div');
+                currentStepEl.className = 'status-step';
+                currentStepEl.innerHTML = `<span class="spinner"></span>${parsed.status}`;
+                statusContainer.appendChild(currentStepEl);
+                scrollToLatests();
+              }
+
+              if (parsed.text) {
+                // First text chunk: remove status steps
+                if (statusContainer) {
+                  statusContainer.remove();
+                  statusContainer = null;
+                  currentStepEl = null;
+                }
+                fullText += parsed.text;
+                logContent.innerHTML = parseMarkdown(fullText);
+                scrollToLatests();
+              }
+            } catch { }
+          }
+        }
+
+        logHistory.push({ role: 'assistant', content: fullText });
+      } catch (err) {
+        appendLog('ERR', err.message);
+      } finally {
+        processing = false;
+        document.getElementById('execute-btn').disabled = false;
+        document.getElementById('input').focus();
+      }
+    }
+
+    function appendLog(identity, content) {
+      const stream = document.getElementById('log-stream');
+      const entry = document.createElement('div');
+
+      const roleClass = identity === 'USR' ? 'user' : 'assistant';
+      entry.className = `entry ${roleClass}`;
+
+      entry.innerHTML = `
+        <div class="entry-badge">${identity}</div>
+        <div class="entry-content">${parseMarkdown(content)}</div>
+      `;
+      stream.appendChild(entry);
+      scrollToLatests();
+      return { el: entry.querySelector('.entry-content') };
+    }
+
+    function scrollToLatests() {
+      const stream = document.getElementById('log-stream');
+      stream.scrollTop = stream.scrollHeight;
+    }
+
+    // --- Interactive Background Script ---
+    const canvas = document.getElementById('bg-canvas');
+    const ctx = canvas.getContext('2d');
+
+    let width, height;
+    const points = [];
+    const spacing = 40; // Grid spacing
+    let mouse = { x: -1000, y: -1000 };
+
+    function resize() {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width;
+      canvas.height = height;
+      initPoints();
+    }
+
+    function initPoints() {
+      points.length = 0;
+      for (let x = 0; x < width + spacing; x += spacing) {
+        for (let y = 0; y < height + spacing; y += spacing) {
+          points.push({
+            x: x,
+            y: y,
+            originX: x,
+            originY: y
+          });
+        }
+      }
+    }
+
+    window.addEventListener('resize', resize);
+    window.addEventListener('mousemove', (e) => {
+      mouse.x = e.clientX;
+      mouse.y = e.clientY;
+    });
+    // Leave interaction area smoothly
+    window.addEventListener('mouseout', () => {
+      mouse.x = -1000;
+      mouse.y = -1000;
+    });
+
+    function animate() {
+      ctx.clearRect(0, 0, width, height);
+
+      const interactionRadius = 150;
+
+      for (let i = 0; i < points.length; i++) {
+        const p = points[i];
+
+        // Calculate distance to mouse
+        const dx = mouse.x - p.originX;
+        const dy = mouse.y - p.originY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        // Spring physics for points moving away from mouse slightly
+        let targetX = p.originX;
+        let targetY = p.originY;
+
+        if (dist < interactionRadius) {
+          const force = (interactionRadius - dist) / interactionRadius;
+          targetX = p.originX - (dx * force * 0.3);
+          targetY = p.originY - (dy * force * 0.3);
+        }
+
+        // Ease towards target
+        p.x += (targetX - p.x) * 0.1;
+        p.y += (targetY - p.y) * 0.1;
+
+        // Draw dot
+        let alpha = 0.1;
+        if (dist < interactionRadius) {
+          alpha = 0.1 + ((interactionRadius - dist) / interactionRadius) * 0.3;
+        }
+
+        ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Draw connecting lines for nearby points only when mouse is near
+        if (dist < interactionRadius) {
+          for (let j = i + 1; j < points.length; j++) {
+            const p2 = points[j];
+            const d2 = Math.sqrt(Math.pow(mouse.x - p2.originX, 2) + Math.pow(mouse.y - p2.originY, 2));
+
+            if (d2 < interactionRadius) {
+              const dx2 = p.x - p2.x;
+              const dy2 = p.y - p2.y;
+              const distPoints = Math.sqrt(dx2 * dx2 + dy2 * dy2);
+
+              if (distPoints < spacing * 1.5) {
+                const lineAlpha = ((interactionRadius - Math.min(dist, d2)) / interactionRadius) * 0.15;
+                ctx.strokeStyle = `rgba(232, 106, 51, ${lineAlpha})`; // Orange accent lines
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(p.x, p.y);
+                ctx.lineTo(p2.x, p2.y);
+                ctx.stroke();
+              }
+            }
+          }
+        }
+      }
+
+      requestAnimationFrame(animate);
+    }
+
+    resize();
+    animate();
+
+    document.getElementById('input').focus();
+  </script>
+</body>
+
+</html>
