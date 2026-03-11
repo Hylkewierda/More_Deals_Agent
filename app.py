@@ -195,7 +195,7 @@ SYSTEM_PROMPT_WITH_KB = f"{SYSTEM_INSTRUCTIONS}\n\n## KENNISBASIS – MORE DEALS
 
 # ── OpenRouter client ────────────────────────────────────────────────────────
 
-MODEL = "google/gemini-flash-2.0"
+MODEL = "google/gemini-2.0-flash-001"
 
 def get_client() -> AsyncOpenAI:
     api_key = os.getenv("OPENROUTER_API_KEY")
@@ -334,7 +334,7 @@ async def chat(request: ChatRequest):
                     yield f"data: {json.dumps({'text': text})}\n\n"
             yield "data: [DONE]\n\n"
         except Exception as e:
-            yield f"data: {json.dumps({'text': f'**Fout van Anthropic API:** {str(e)}'})}\n\n"
+            yield f"data: {json.dumps({'text': f'**API-fout:** {str(e)}'})}\n\n"
             yield "data: [DONE]\n\n"
 
     return StreamingResponse(generate(), media_type="text/event-stream")
