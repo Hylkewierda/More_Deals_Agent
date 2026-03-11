@@ -5,16 +5,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MoreDeals Agent</title>
+  <link rel="icon" type="image/png" href="/static/favicon.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
     href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
     rel="stylesheet" />
   <style>
-    /* 
-      CINEMATIC / INSTRUMENT DESIGN SYSTEM
-      Eradicating generic AI patterns in favor of measured architectural precision.
-    */
     :root {
       --bg: #09090b;
       --surface: #121214;
@@ -23,25 +20,15 @@
       --text: #fafafa;
       --text-muted: #a1a1aa;
       --accent: #E86A33;
-      /* Stark brand accent */
       --font-ui: 'Inter', -apple-system, sans-serif;
       --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
-
-      /* Easing: Spring-like, decisive */
       --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
       --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
-    ::selection {
-      background: rgba(232, 106, 51, 0.3);
-      color: var(--text);
-    }
+    ::selection { background: rgba(232, 106, 51, 0.3); color: var(--text); }
 
     body {
       font-family: var(--font-ui);
@@ -55,14 +42,10 @@
       -moz-osx-font-smoothing: grayscale;
     }
 
-    /* Noise Texture Overlay for depth without gradients */
     body::before {
       content: "";
       position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
+      top: 0; left: 0; right: 0; bottom: 0;
       background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opactiy='0.04'/%3E%3C/svg%3E");
       opacity: 0.03;
       pointer-events: none;
@@ -71,15 +54,13 @@
 
     #bg-canvas {
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
       z-index: 0;
       pointer-events: none;
     }
 
-    /* Top Navigation Area - Architectural Grid */
+    /* ── Header ── */
     header {
       height: 56px;
       display: flex;
@@ -89,7 +70,30 @@
       border-bottom: 1px solid var(--border);
       background: var(--bg);
       flex-shrink: 0;
+      position: relative;
+      z-index: 10;
     }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .sidebar-toggle {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.2s;
+    }
+
+    .sidebar-toggle:hover { color: var(--text); }
+    .sidebar-toggle svg { width: 16px; height: 16px; fill: currentColor; }
 
     .brand {
       display: flex;
@@ -103,8 +107,7 @@
     }
 
     .brand-accent {
-      width: 6px;
-      height: 6px;
+      width: 6px; height: 6px;
       background: var(--accent);
       border-radius: 50%;
     }
@@ -120,14 +123,149 @@
     }
 
     .status-dot {
-      width: 4px;
-      height: 4px;
+      width: 4px; height: 4px;
       background: #10b981;
       border-radius: 50%;
       box-shadow: 0 0 6px rgba(16, 185, 129, 0.4);
     }
 
-    /* Main Content Area */
+    /* ── App Layout (sidebar + viewport) ── */
+    .app-layout {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+      position: relative;
+      z-index: 10;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 260px;
+      flex-shrink: 0;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: width 0.25s var(--ease-out), opacity 0.25s var(--ease-out);
+    }
+
+    .sidebar.collapsed {
+      width: 0;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .sidebar-top {
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .new-chat-btn {
+      width: 100%;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.05em;
+      padding: 8px 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s var(--ease-out);
+    }
+
+    .new-chat-btn:hover {
+      background: var(--bg);
+      border-color: var(--border-focus);
+    }
+
+    .new-chat-btn svg { width: 13px; height: 13px; fill: currentColor; flex-shrink: 0; }
+
+    .sidebar-section-label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      padding: 14px 16px 8px;
+      flex-shrink: 0;
+    }
+
+    .conv-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 8px 16px;
+    }
+
+    .conv-list::-webkit-scrollbar { width: 3px; }
+    .conv-list::-webkit-scrollbar-track { background: transparent; }
+    .conv-list::-webkit-scrollbar-thumb { background: var(--border); }
+
+    .conv-empty {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-muted);
+      padding: 12px 8px;
+      opacity: 0.6;
+    }
+
+    .conv-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      cursor: pointer;
+      border-radius: 2px;
+      transition: background 0.15s;
+      group: true;
+    }
+
+    .conv-item:hover { background: rgba(255,255,255,0.04); }
+    .conv-item.active { background: rgba(232, 106, 51, 0.08); border-left: 2px solid var(--accent); padding-left: 8px; }
+
+    .conv-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .conv-title {
+      font-size: 12px;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.4;
+    }
+
+    .conv-date {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .conv-delete {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 3px;
+      opacity: 0;
+      transition: opacity 0.15s, color 0.15s;
+      display: flex;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .conv-item:hover .conv-delete { opacity: 1; }
+    .conv-delete:hover { color: #ef4444; }
+    .conv-delete svg { width: 12px; height: 12px; fill: currentColor; }
+
+    /* ── Main Viewport ── */
     .viewport {
       flex: 1;
       display: flex;
@@ -136,7 +274,6 @@
       overflow: hidden;
     }
 
-    /* Scrollable Chat Region */
     .log-stream {
       flex: 1;
       width: 100%;
@@ -149,19 +286,10 @@
       scroll-behavior: smooth;
     }
 
-    .log-stream::-webkit-scrollbar {
-      width: 4px;
-    }
+    .log-stream::-webkit-scrollbar { width: 4px; }
+    .log-stream::-webkit-scrollbar-track { background: transparent; }
+    .log-stream::-webkit-scrollbar-thumb { background: var(--border); }
 
-    .log-stream::-webkit-scrollbar-track {
-      background: transparent;
-    }
-
-    .log-stream::-webkit-scrollbar-thumb {
-      background: var(--border);
-    }
-
-    /* Empty State / Welcome */
     .empty-state {
       margin-top: 10vh;
       animation: reveal 0.8s var(--ease-out) forwards;
@@ -183,7 +311,6 @@
       max-width: 480px;
     }
 
-    /* Message Typography & Layout (Not Bubbles, but Document Blocks) */
     .entry {
       display: grid;
       grid-template-columns: 48px 1fr;
@@ -195,15 +322,8 @@
     }
 
     @keyframes reveal {
-      from {
-        opacity: 0;
-        transform: translateY(8px);
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
     .entry-badge {
@@ -217,13 +337,8 @@
       text-align: right;
     }
 
-    .entry.user .entry-badge {
-      color: var(--text);
-    }
-
-    .entry.assistant .entry-badge {
-      color: var(--accent);
-    }
+    .entry.user .entry-badge { color: var(--text); }
+    .entry.assistant .entry-badge { color: var(--accent); }
 
     .entry-content {
       font-size: 15px;
@@ -231,11 +346,8 @@
       color: var(--text);
     }
 
-    .entry.user .entry-content {
-      color: var(--text-muted);
-    }
+    .entry.user .entry-content { color: var(--text-muted); }
 
-    /* Status Steps */
     .status-step {
       font-family: var(--font-mono);
       font-size: 12px;
@@ -249,57 +361,29 @@
 
     .status-step .spinner {
       display: inline-block;
-      width: 12px;
-      height: 12px;
+      width: 12px; height: 12px;
       border: 1.5px solid var(--border);
       border-top-color: var(--accent);
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
     }
 
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
-    .status-step.done {
-      opacity: 0.4;
-    }
+    .status-step.done { opacity: 0.4; }
+    .status-step.done .spinner { animation: none; border-color: var(--accent); background: var(--accent); }
 
-    .status-step.done .spinner {
-      animation: none;
-      border-color: var(--accent);
-      background: var(--accent);
-    }
-
-    /* Markdown Elements */
-    .entry-content strong {
-      font-weight: 600;
-      color: #fff;
-    }
-
-    .entry-content p {
-      margin-bottom: 16px;
-    }
-
-    .entry-content p:last-child {
-      margin-bottom: 0;
-    }
-
-    .entry-content ul {
-      padding-left: 20px;
-      margin-bottom: 16px;
-    }
-
-    .entry-content li {
-      margin-bottom: 8px;
-    }
+    .entry-content strong { font-weight: 600; color: #fff; }
+    .entry-content p { margin-bottom: 16px; }
+    .entry-content p:last-child { margin-bottom: 0; }
+    .entry-content ul { padding-left: 20px; margin-bottom: 16px; }
+    .entry-content li { margin-bottom: 8px; }
 
     .entry-content pre {
       background: var(--surface);
       border: 1px solid var(--border);
       padding: 16px 20px;
       border-radius: 4px;
-      /* Sharp, intentional border radius */
       overflow-x: auto;
       margin: 16px 0;
     }
@@ -317,7 +401,7 @@
       border-radius: 3px;
     }
 
-    /* Bottom Instrument Deck (Input Area) */
+    /* ── Instrument Deck ── */
     .instrument-deck {
       flex-shrink: 0;
       width: 100%;
@@ -338,9 +422,7 @@
       box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.5);
     }
 
-    .command-line:focus-within {
-      border-color: var(--border-focus);
-    }
+    .command-line:focus-within { border-color: var(--border-focus); }
 
     .cmd-textarea {
       width: 100%;
@@ -357,9 +439,7 @@
       max-height: 30vh;
     }
 
-    .cmd-textarea::placeholder {
-      color: #52525b;
-    }
+    .cmd-textarea::placeholder { color: #52525b; }
 
     .cmd-toolbar {
       display: flex;
@@ -370,14 +450,9 @@
       transition: border-color 0.2s;
     }
 
-    .command-line:focus-within .cmd-toolbar {
-      border-top-color: var(--border);
-    }
+    .command-line:focus-within .cmd-toolbar { border-top-color: var(--border); }
 
-    .cmd-actions {
-      display: flex;
-      gap: 8px;
-    }
+    .cmd-actions { display: flex; gap: 8px; }
 
     .cmd-btn {
       background: transparent;
@@ -395,24 +470,14 @@
       transition: all 0.2s var(--ease-out);
     }
 
-    .cmd-btn:hover {
-      background: var(--surface);
-      color: var(--text);
-      border-color: var(--border);
-    }
-
-    .cmd-btn svg {
-      width: 14px;
-      height: 14px;
-      fill: currentColor;
-    }
+    .cmd-btn:hover { background: var(--surface); color: var(--text); border-color: var(--border); }
+    .cmd-btn svg { width: 14px; height: 14px; fill: currentColor; }
 
     .cmd-execute {
       background: var(--surface);
       border: 1px solid var(--border);
       color: var(--text);
-      width: 32px;
-      height: 32px;
+      width: 32px; height: 32px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -420,24 +485,10 @@
       transition: all 0.2s var(--ease-out);
     }
 
-    .cmd-execute:hover:not(:disabled) {
-      background: var(--text);
-      color: var(--bg);
-      border-color: var(--text);
-    }
+    .cmd-execute:hover:not(:disabled) { background: var(--text); color: var(--bg); border-color: var(--text); }
+    .cmd-execute:disabled { opacity: 0.4; cursor: not-allowed; }
+    .cmd-execute svg { width: 14px; height: 14px; fill: currentColor; }
 
-    .cmd-execute:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-    }
-
-    .cmd-execute svg {
-      width: 14px;
-      height: 14px;
-      fill: currentColor;
-    }
-
-    /* Attachment Pills UI */
     .attachments-container {
       display: flex;
       flex-wrap: wrap;
@@ -446,9 +497,7 @@
       margin-top: 12px;
     }
 
-    .attachments-container:empty {
-      margin-top: 0;
-    }
+    .attachments-container:empty { margin-top: 0; }
 
     .attachment-pill {
       display: inline-flex;
@@ -463,25 +512,46 @@
       font-size: 11px;
     }
 
-    .remove-att {
-      cursor: pointer;
-      opacity: 0.6;
-      transition: opacity 0.2s;
+    .remove-att { cursor: pointer; opacity: 0.6; transition: opacity 0.2s; }
+    .remove-att:hover { opacity: 1; }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%) translateY(8px);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      padding: 10px 20px;
+      opacity: 0;
+      transition: all 0.3s var(--ease-out);
+      pointer-events: none;
+      z-index: 200;
+      white-space: nowrap;
     }
 
-    .remove-att:hover {
-      opacity: 1;
-    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
   </style>
 </head>
 
 <body>
   <canvas id="bg-canvas"></canvas>
 
-  <header style="position: relative; z-index: 10;">
-    <div class="brand">
-      <div class="brand-accent"></div>
-      MoreDeals Agent
+  <div id="toast" class="toast"></div>
+
+  <header>
+    <div class="header-left">
+      <button class="sidebar-toggle" onclick="toggleSidebar()" title="Gesprekken">
+        <svg viewBox="0 0 24 24"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+      </button>
+      <div class="brand">
+        <div class="brand-accent"></div>
+        MoreDeals Agent
+      </div>
     </div>
     <div class="status-indicator">
       <div class="status-dot"></div>
@@ -489,58 +559,229 @@
     </div>
   </header>
 
-  <main class="viewport" style="z-index: 10;">
-    <div class="log-stream" id="log-stream">
-
-      <div class="empty-state" id="empty-state">
-        <h1 class="empty-header">Awaiting Input.</h1>
-        <p class="empty-sub">
-          Submit sales pitches for systematic review, or query the assistant for course curriculum clarification.
-          Provide high-context data for optimal analysis.
-        </p>
+  <div class="app-layout">
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+      <div class="sidebar-top">
+        <button class="new-chat-btn" onclick="newChat()">
+          <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+          NIEUW GESPREK
+        </button>
       </div>
-
+      <div class="sidebar-section-label">Opgeslagen gesprekken</div>
+      <div class="conv-list" id="conv-list">
+        <div class="conv-empty">Nog geen gesprekken opgeslagen.</div>
+      </div>
     </div>
 
-    <div class="instrument-deck">
-      <div class="command-line">
-        <div id="attachments-container" class="attachments-container"></div>
-        <textarea id="input" class="cmd-textarea" placeholder="Enter query or paste sales document..." rows="1"
-          onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
-
-        <div class="cmd-toolbar">
-          <div class="cmd-actions">
-            <input type="file" id="file-upload" accept=".docx,.txt,.md,.csv,.json" style="display: none;"
-              onchange="handleFileSelect(event)" />
-            <button class="cmd-btn" title="Attach Document" aria-label="Upload file"
-              onclick="document.getElementById('file-upload').click()">
-              <svg viewBox="0 0 24 24">
-                <path
-                  d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5a2.5 2.5 0 015 0v10.5c0 .55-.45 1-1 1s-1-.45-1-1V6H10v9.5a2.5 2.5 0 005 0V5c0-2.21-1.79-4-4-4S7 2.79 7 5v12.5c0 3.04 2.46 5.5 5.5 5.5s5.5-2.46 5.5-5.5V6h-1.5z" />
-              </svg>
-              <span id="attach-label">ATTACH_FILE</span>
-            </button>
-          </div>
-          <button class="cmd-execute" id="execute-btn" onclick="executeCommand()">
-            <svg viewBox="0 0 24 24">
-              <path d="M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z" />
-            </svg>
-          </button>
+    <!-- Main chat area -->
+    <main class="viewport">
+      <div class="log-stream" id="log-stream">
+        <div class="empty-state" id="empty-state">
+          <h1 class="empty-header">Awaiting Input.</h1>
+          <p class="empty-sub">
+            Submit sales pitches for systematic review, or query the assistant for course curriculum clarification.
+            Provide high-context data for optimal analysis.
+          </p>
         </div>
       </div>
-    </div>
-  </main>
+
+      <div class="instrument-deck">
+        <div class="command-line">
+          <div id="attachments-container" class="attachments-container"></div>
+          <textarea id="input" class="cmd-textarea" placeholder="Enter query or paste sales document..." rows="1"
+            onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+
+          <div class="cmd-toolbar">
+            <div class="cmd-actions">
+              <input type="file" id="file-upload" accept=".pdf,.docx,.txt,.md,.csv,.json" style="display: none;"
+                onchange="handleFileSelect(event)" />
+              <button class="cmd-btn" title="Attach Document" onclick="document.getElementById('file-upload').click()">
+                <svg viewBox="0 0 24 24">
+                  <path d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5a2.5 2.5 0 015 0v10.5c0 .55-.45 1-1 1s-1-.45-1-1V6H10v9.5a2.5 2.5 0 005 0V5c0-2.21-1.79-4-4-4S7 2.79 7 5v12.5c0 3.04 2.46 5.5 5.5 5.5s5.5-2.46 5.5-5.5V6h-1.5z" />
+                </svg>
+                <span id="attach-label">ATTACH_FILE</span>
+              </button>
+              <button class="cmd-btn" id="save-btn" title="Gesprek opslaan" onclick="saveConversation()">
+                <svg viewBox="0 0 24 24">
+                  <path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/>
+                </svg>
+                OPSLAAN
+              </button>
+            </div>
+            <button class="cmd-execute" id="execute-btn" onclick="executeCommand()">
+              <svg viewBox="0 0 24 24">
+                <path d="M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
 
   <script>
     let logHistory = [];
     let processing = false;
     let attachedFiles = [];
+    let currentConvId = null;
+    let sidebarOpen = true;
+
+    // ── Sidebar ──────────────────────────────────────────────────────────────
+
+    function toggleSidebar() {
+      sidebarOpen = !sidebarOpen;
+      document.getElementById('sidebar').classList.toggle('collapsed', !sidebarOpen);
+    }
+
+    // ── Conversations ─────────────────────────────────────────────────────────
+
+    async function loadConversationList() {
+      try {
+        const res = await fetch('/api/conversations');
+        const list = await res.json();
+        renderConvList(list);
+      } catch (e) {
+        console.error('Could not load conversations', e);
+      }
+    }
+
+    function renderConvList(list) {
+      const el = document.getElementById('conv-list');
+      if (!list.length) {
+        el.innerHTML = '<div class="conv-empty">Nog geen gesprekken opgeslagen.</div>';
+        return;
+      }
+      el.innerHTML = list.map(c => `
+        <div class="conv-item ${c.id === currentConvId ? 'active' : ''}" id="conv-item-${c.id}" onclick="loadConversation('${c.id}')">
+          <div class="conv-info">
+            <div class="conv-title">${escapeHtml(c.title)}</div>
+            <div class="conv-date">${formatDate(c.saved_at)} &middot; ${c.message_count} berichten</div>
+          </div>
+          <button class="conv-delete" onclick="event.stopPropagation(); deleteConversation('${c.id}')" title="Verwijder">
+            <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+          </button>
+        </div>
+      `).join('');
+    }
+
+    async function saveConversation() {
+      if (!logHistory.length) {
+        showToast('Geen gesprek om op te slaan.');
+        return;
+      }
+      try {
+        const res = await fetch('/api/conversations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messages: logHistory })
+        });
+        const data = await res.json();
+        currentConvId = data.id;
+        showToast('Gesprek opgeslagen.');
+        loadConversationList();
+      } catch (e) {
+        showToast('Opslaan mislukt.');
+      }
+    }
+
+    async function loadConversation(id) {
+      try {
+        const res = await fetch(`/api/conversations/${id}`);
+        const conv = await res.json();
+
+        // Clear current chat
+        clearChat(false);
+        currentConvId = id;
+
+        // Rebuild history and UI
+        logHistory = conv.messages;
+        const emptyState = document.getElementById('empty-state');
+        if (emptyState) emptyState.style.display = 'none';
+
+        conv.messages.forEach(m => {
+          appendLog(m.role === 'user' ? 'USR' : 'SYS', m.content, false);
+        });
+
+        // Scroll to bottom
+        setTimeout(() => {
+          const stream = document.getElementById('log-stream');
+          stream.scrollTop = stream.scrollHeight;
+        }, 50);
+
+        // Update active state
+        loadConversationList();
+
+        // Close sidebar on mobile if narrow
+        if (window.innerWidth < 768) toggleSidebar();
+      } catch (e) {
+        showToast('Laden mislukt.');
+      }
+    }
+
+    async function deleteConversation(id) {
+      try {
+        await fetch(`/api/conversations/${id}`, { method: 'DELETE' });
+        if (currentConvId === id) {
+          currentConvId = null;
+        }
+        loadConversationList();
+      } catch (e) {
+        showToast('Verwijderen mislukt.');
+      }
+    }
+
+    function newChat() {
+      clearChat(true);
+      loadConversationList();
+    }
+
+    function clearChat(resetId) {
+      logHistory = [];
+      if (resetId) currentConvId = null;
+      attachedFiles = [];
+      updateAttachmentUI();
+
+      const stream = document.getElementById('log-stream');
+      stream.innerHTML = `
+        <div class="empty-state" id="empty-state">
+          <h1 class="empty-header">Awaiting Input.</h1>
+          <p class="empty-sub">
+            Submit sales pitches for systematic review, or query the assistant for course curriculum clarification.
+            Provide high-context data for optimal analysis.
+          </p>
+        </div>`;
+
+      document.getElementById('input').value = '';
+      document.getElementById('input').style.height = 'auto';
+    }
+
+    // ── Toast ─────────────────────────────────────────────────────────────────
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2500);
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    function escapeHtml(str) {
+      return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    function formatDate(iso) {
+      const d = new Date(iso);
+      return d.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' });
+    }
+
+    // ── File upload ───────────────────────────────────────────────────────────
 
     async function handleFileSelect(e) {
       const file = e.target.files[0];
       if (!file) return;
-
-      e.target.value = ''; // reset input
+      e.target.value = '';
 
       const label = document.getElementById('attach-label');
       const orgText = label.innerText;
@@ -550,14 +791,9 @@
       formData.append('file', file);
 
       try {
-        const res = await fetch('/api/extract', {
-          method: 'POST',
-          body: formData
-        });
-
+        const res = await fetch('/api/extract', { method: 'POST', body: formData });
         const data = await res.json();
         if (data.error) throw new Error(data.error);
-
         attachedFiles.push({ filename: data.filename, text: data.text });
         updateAttachmentUI();
       } catch (err) {
@@ -573,10 +809,7 @@
       attachedFiles.forEach((f, idx) => {
         const pill = document.createElement('div');
         pill.className = 'attachment-pill';
-        pill.innerHTML = `
-          <span>${f.filename}</span>
-          <span class="remove-att" onclick="removeAttachment(${idx})">✕</span>
-        `;
+        pill.innerHTML = `<span>${f.filename}</span><span class="remove-att" onclick="removeAttachment(${idx})">✕</span>`;
         container.appendChild(pill);
       });
     }
@@ -585,6 +818,8 @@
       attachedFiles.splice(idx, 1);
       updateAttachmentUI();
     }
+
+    // ── Chat ──────────────────────────────────────────────────────────────────
 
     function autoResize(el) {
       el.style.height = 'auto';
@@ -618,28 +853,21 @@
       if (processing) return;
       const inputEl = document.getElementById('input');
       const text = inputEl.value.trim();
-
       if (!text && attachedFiles.length === 0) return;
 
       const emptyState = document.getElementById('empty-state');
       if (emptyState) emptyState.style.display = 'none';
 
-      // Build payload for backend
       let payloadContent = "";
       if (attachedFiles.length > 0) {
         attachedFiles.forEach(att => {
           payloadContent += `\n\n--- DOCUMENT_EXCERPT: ${att.filename} ---\n${att.text}\n--- END OF DOCUMENT ---\n\n`;
         });
-        if (text) {
-          payloadContent += "\nUSER INSTRUCTION: " + text;
-        } else {
-          payloadContent += "\nUSER INSTRUCTION: Please review the attached document(s).";
-        }
+        payloadContent += text ? "\nUSER INSTRUCTION: " + text : "\nUSER INSTRUCTION: Please review the attached document(s).";
       } else {
         payloadContent = text;
       }
 
-      // Build visual display content for UI
       let displayContent = text;
       if (attachedFiles.length > 0) {
         let attHtml = attachedFiles.map(a => `\`[ATTACHED FILE: ${a.filename}]\``).join('\n');
@@ -690,9 +918,7 @@
             if (data === '[DONE]') break;
             try {
               const parsed = JSON.parse(data);
-
               if (parsed.status) {
-                // Show status step
                 if (!statusContainer) {
                   statusContainer = document.createElement('div');
                   logContent.appendChild(statusContainer);
@@ -702,11 +928,9 @@
                 currentStepEl.className = 'status-step';
                 currentStepEl.innerHTML = `<span class="spinner"></span>${parsed.status}`;
                 statusContainer.appendChild(currentStepEl);
-                scrollToLatests();
+                scrollToLatest();
               }
-
               if (parsed.text) {
-                // First text chunk: remove status steps
                 if (statusContainer) {
                   statusContainer.remove();
                   statusContainer = null;
@@ -714,7 +938,7 @@
                 }
                 fullText += parsed.text;
                 logContent.innerHTML = parseMarkdown(fullText);
-                scrollToLatests();
+                scrollToLatest();
               }
             } catch { }
           }
@@ -730,34 +954,37 @@
       }
     }
 
-    function appendLog(identity, content) {
+    function appendLog(identity, content, animate = true) {
       const stream = document.getElementById('log-stream');
       const entry = document.createElement('div');
-
       const roleClass = identity === 'USR' ? 'user' : 'assistant';
       entry.className = `entry ${roleClass}`;
-
+      if (!animate) {
+        entry.style.animation = 'none';
+        entry.style.opacity = '1';
+        entry.style.transform = 'none';
+      }
       entry.innerHTML = `
         <div class="entry-badge">${identity}</div>
         <div class="entry-content">${parseMarkdown(content)}</div>
       `;
       stream.appendChild(entry);
-      scrollToLatests();
+      if (animate) scrollToLatest();
       return { el: entry.querySelector('.entry-content') };
     }
 
-    function scrollToLatests() {
+    function scrollToLatest() {
       const stream = document.getElementById('log-stream');
       stream.scrollTop = stream.scrollHeight;
     }
 
-    // --- Interactive Background Script ---
+    // ── Background Canvas ─────────────────────────────────────────────────────
+
     const canvas = document.getElementById('bg-canvas');
     const ctx = canvas.getContext('2d');
-
     let width, height;
     const points = [];
-    const spacing = 40; // Grid spacing
+    const spacing = 40;
     let mouse = { x: -1000, y: -1000 };
 
     function resize() {
@@ -772,79 +999,53 @@
       points.length = 0;
       for (let x = 0; x < width + spacing; x += spacing) {
         for (let y = 0; y < height + spacing; y += spacing) {
-          points.push({
-            x: x,
-            y: y,
-            originX: x,
-            originY: y
-          });
+          points.push({ x, y, originX: x, originY: y });
         }
       }
     }
 
     window.addEventListener('resize', resize);
-    window.addEventListener('mousemove', (e) => {
-      mouse.x = e.clientX;
-      mouse.y = e.clientY;
-    });
-    // Leave interaction area smoothly
-    window.addEventListener('mouseout', () => {
-      mouse.x = -1000;
-      mouse.y = -1000;
-    });
+    window.addEventListener('mousemove', (e) => { mouse.x = e.clientX; mouse.y = e.clientY; });
+    window.addEventListener('mouseout', () => { mouse.x = -1000; mouse.y = -1000; });
 
     function animate() {
       ctx.clearRect(0, 0, width, height);
-
       const interactionRadius = 150;
 
       for (let i = 0; i < points.length; i++) {
         const p = points[i];
-
-        // Calculate distance to mouse
         const dx = mouse.x - p.originX;
         const dy = mouse.y - p.originY;
         const dist = Math.sqrt(dx * dx + dy * dy);
-
-        // Spring physics for points moving away from mouse slightly
-        let targetX = p.originX;
-        let targetY = p.originY;
+        let targetX = p.originX, targetY = p.originY;
 
         if (dist < interactionRadius) {
           const force = (interactionRadius - dist) / interactionRadius;
-          targetX = p.originX - (dx * force * 0.3);
-          targetY = p.originY - (dy * force * 0.3);
+          targetX = p.originX - dx * force * 0.3;
+          targetY = p.originY - dy * force * 0.3;
         }
 
-        // Ease towards target
         p.x += (targetX - p.x) * 0.1;
         p.y += (targetY - p.y) * 0.1;
 
-        // Draw dot
         let alpha = 0.1;
-        if (dist < interactionRadius) {
-          alpha = 0.1 + ((interactionRadius - dist) / interactionRadius) * 0.3;
-        }
+        if (dist < interactionRadius) alpha = 0.1 + ((interactionRadius - dist) / interactionRadius) * 0.3;
 
         ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
         ctx.beginPath();
         ctx.arc(p.x, p.y, 1.5, 0, Math.PI * 2);
         ctx.fill();
 
-        // Draw connecting lines for nearby points only when mouse is near
         if (dist < interactionRadius) {
           for (let j = i + 1; j < points.length; j++) {
             const p2 = points[j];
             const d2 = Math.sqrt(Math.pow(mouse.x - p2.originX, 2) + Math.pow(mouse.y - p2.originY, 2));
-
             if (d2 < interactionRadius) {
-              const dx2 = p.x - p2.x;
-              const dy2 = p.y - p2.y;
+              const dx2 = p.x - p2.x, dy2 = p.y - p2.y;
               const distPoints = Math.sqrt(dx2 * dx2 + dy2 * dy2);
-
               if (distPoints < spacing * 1.5) {
                 const lineAlpha = ((interactionRadius - Math.min(dist, d2)) / interactionRadius) * 0.15;
-                ctx.strokeStyle = `rgba(232, 106, 51, ${lineAlpha})`; // Orange accent lines
+                ctx.strokeStyle = `rgba(232, 106, 51, ${lineAlpha})`;
                 ctx.lineWidth = 1;
                 ctx.beginPath();
                 ctx.moveTo(p.x, p.y);
@@ -861,8 +1062,10 @@
 
     resize();
     animate();
-
     document.getElementById('input').focus();
+
+    // Load conversation list on start
+    loadConversationList();
   </script>
 </body>
 
