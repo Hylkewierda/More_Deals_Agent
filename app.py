@@ -11,7 +11,7 @@ from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from openai import AsyncOpenAI
+from anthropic import AsyncAnthropic
 from docx import Document
 from pptx import Presentation
 from pypdf import PdfReader
@@ -193,21 +193,18 @@ Hieronder staat je volledige kennisbasis. Gebruik deze als bron voor al je antwo
 
 SYSTEM_PROMPT_WITH_KB = f"{SYSTEM_INSTRUCTIONS}\n\n## KENNISBASIS – MORE DEALS PROGRAMMA\n\n{KNOWLEDGE_BASE}"
 
-# ── OpenRouter client ────────────────────────────────────────────────────────
+# ── Anthropic client ─────────────────────────────────────────────────────────
 
-MODEL = "google/gemini-2.0-flash-001"
+MODEL = "claude-haiku-4-5-20251001"
 
-def get_client() -> AsyncOpenAI:
-    api_key = os.getenv("OPENROUTER_API_KEY")
+def get_client() -> AsyncAnthropic:
+    api_key = os.getenv("ANTHROPIC_API_KEY")
     if not api_key:
         raise HTTPException(
             status_code=500,
-            detail="OPENROUTER_API_KEY niet ingesteld. Voeg hem toe aan je .env bestand."
+            detail="ANTHROPIC_API_KEY niet ingesteld. Voeg hem toe aan je .env bestand."
         )
-    return AsyncOpenAI(
-        api_key=api_key,
-        base_url="https://openrouter.ai/api/v1",
-    )
+    return AsyncAnthropic(api_key=api_key)
 
 
 # ── Pydantic models ─────────────────────────────────────────────────────────
@@ -322,16 +319,15 @@ async def chat(request: ChatRequest):
                     yield f"data: {json.dumps({'status': step})}\n\n"
                     await asyncio.sleep(0.6)
 
-            stream = await client.chat.completions.create(
+            async with client.messages.stream(
                 model=MODEL,
                 max_tokens=2048,
-                messages=[{"role": "system", "content": system_text}, *messages],
-                stream=True,
-            )
-            async for chunk in stream:
-                text = chunk.choices[0].delta.content or ""
-                if text:
-                    yield f"data: {json.dumps({'text': text})}\n\n"
+                system=system_text,
+                messages=messages,
+            ) as stream:
+                async for text in stream.text_stream:
+                    if text:
+                        yield f"data: {json.dumps({'text': text})}\n\n"
             yield "data: [DONE]\n\n"
         except Exception as e:
             yield f"data: {json.dumps({'text': f'**API-fout:** {str(e)}'})}\n\n"
