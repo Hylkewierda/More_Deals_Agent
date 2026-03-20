@@ -94,6 +94,26 @@ def _read_pptx(filepath: str) -> str:
     return "\n".join(lines)
 
 
+SKILLS_DIR = os.path.join(DOCS_DIR, "skills")
+
+
+def load_skills() -> str:
+    """Load all skill files from data/skills/ directory."""
+    if not os.path.exists(SKILLS_DIR):
+        return ""
+    sections = []
+    for filename in sorted(os.listdir(SKILLS_DIR)):
+        if filename.endswith(".md"):
+            filepath = os.path.join(SKILLS_DIR, filename)
+            try:
+                with open(filepath, "r", encoding="utf-8") as f:
+                    content = f.read()
+                sections.append(content)
+            except Exception as e:
+                print(f"WARN: Skill laden mislukt {filename}: {e}")
+    return "\n\n---\n\n".join(sections)
+
+
 CACHE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "knowledge_cache.json")
 
 
@@ -159,6 +179,10 @@ print("Kennisbasis laden…")
 KNOWLEDGE_BASE = load_knowledge_base()
 print(f"Kennisbasis geladen: {len(KNOWLEDGE_BASE):,} tekens")
 
+print("Skills laden…")
+SKILLS_CONTENT = load_skills()
+print(f"Skills geladen: {len(SKILLS_CONTENT):,} tekens")
+
 SYSTEM_INSTRUCTIONS = """Je bent de **More Deals AI Agent** — een expert sales coach en assistent van het More Deals programma, opgericht door Joey Moreau.
 
 More Deals helpt ondernemers en startups om hun salescijfers te verhogen via een gestructureerd programma dat bestaat uit:
@@ -173,6 +197,7 @@ More Deals helpt ondernemers en startups om hun salescijfers te verhogen via een
 - Geef praktisch, concreet advies op basis van het More Deals programma
 - Leg frameworks uit (LEADS, MAGIC, Feedback Loop, Certainty Script, etc.)
 - Help bij het kwalificeren van leads en deals
+- Schrijf outreach berichten, follow-ups en reminders met behulp van je outreach skills
 - Spreek Nederlands tenzij de gebruiker Engels spreekt
 
 **Communicatiestijl:**
@@ -191,7 +216,9 @@ More Deals helpt ondernemers en startups om hun salescijfers te verhogen via een
 
 Hieronder staat je volledige kennisbasis. Gebruik deze als bron voor al je antwoorden."""
 
-SYSTEM_PROMPT_WITH_KB = f"{SYSTEM_INSTRUCTIONS}\n\n## KENNISBASIS – MORE DEALS PROGRAMMA\n\n{KNOWLEDGE_BASE}"
+SKILLS_SECTION = f"\n\n## OUTREACH SKILLS\n\nHieronder staan je outreach skills. Gebruik deze wanneer een gebruiker vraagt om outreach berichten, cold messages, follow-ups, tweede berichten na een reactie, of reminders te schrijven. Volg de structuur, regels en het proces uit de betreffende skill exact op.\n\n{SKILLS_CONTENT}" if SKILLS_CONTENT else ""
+
+SYSTEM_PROMPT_WITH_KB = f"{SYSTEM_INSTRUCTIONS}{SKILLS_SECTION}\n\n## KENNISBASIS – MORE DEALS PROGRAMMA\n\n{KNOWLEDGE_BASE}"
 
 # ── Anthropic client ─────────────────────────────────────────────────────────
 
@@ -267,7 +294,8 @@ SALES_KEYWORDS = re.compile(
     r"|demo|presentatie|afspraak|meeting|kennismak|introductie|connectie"
     r"|LinkedIn|script|belscript|template|openingszin|campagne|webinar"
     r"|CRM|salesforce|hubspot|database|whitepaper|beurs|event"
-    r"|bellen|opvolg|terugbel"
+    r"|bellen|opvolg|terugbel|outreach|eerste bericht|second message|tweede bericht"
+    r"|follow.?up bericht|reminder|herinnering|cold.?message|linkedin bericht"
     # Waarde & propositie
     r"|waarde|waardepropositie|propositie|USP|pijnpunt|oplossing|resultaat"
     r"|concurrentie|markt|vertrouwen|akkoord|handtekening|commitment|urgentie"
@@ -298,7 +326,7 @@ async def chat(request: ChatRequest):
 
     last_user_msg = next((m.content for m in reversed(request.messages) if m.role == "user"), "")
     use_kb = needs_knowledge_base(last_user_msg)
-    system_text = SYSTEM_PROMPT_WITH_KB if use_kb else SYSTEM_INSTRUCTIONS
+    system_text = SYSTEM_PROMPT_WITH_KB if use_kb else f"{SYSTEM_INSTRUCTIONS}{SKILLS_SECTION}"
 
     async def generate() -> AsyncGenerator[str, None]:
         try:
